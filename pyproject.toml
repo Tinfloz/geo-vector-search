@@ -1,0 +1,21 @@
+[project]
+name = "geo_pysearch"
+version = "0.1.0"
+description = "GeoVectorSearch is a lightweight Python SDK and command-line tool for semantic discovery of GEO datasets suitable for differential gene expression analysis. Powered by FAISS-based vector search and optional GPT-based filtering, it helps researchers and developers quickly identify relevant RNA-seq or microarray datasets."
+readme = "README.md"
+license = "GPL-3.0"
+authors = [{ name = "Swapnonil Chakraborty", email = "swapnonil0007@gmail.com" }]
+requires-python = ">=3.12"
+dependencies = [
+    "click>=8.2.2",
+    "faiss-cpu>=1.11.0.post1",
+    "numpy>=2.3.2",
+    "pandas>=2.3.1",
+    "python-dotenv>=1.1.1",
+    "questionary>=2.1.0",
+    "sentence-transformers>=5.0.0",
+    "tenacity>=9.1.2",
+    "tqdm>=4.67.1",
+]
+[project.scripts]
+geo-search = "geo_pysearch.cli:main"
