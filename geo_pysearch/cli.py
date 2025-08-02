@@ -29,9 +29,12 @@ def main():
         default=False
     ).ask()
 
-    # Step 5: GPT confidence threshold (if filtering)
+    # Step 5: GPT settings (if enabled)
     confidence_threshold = 0.6
     return_all_gpt_results = False
+    api_key = None
+    api_url = None
+
     if use_gpt_filter:
         confidence_threshold = float(questionary.text(
             "🎯 Minimum GPT confidence score (0.0 - 1.0)?",
@@ -43,6 +46,18 @@ def main():
             default=False
         ).ask()
 
+        # API key (hidden input)
+        api_key = questionary.password("🔐 Enter your OpenAI API key:").ask()
+        if not api_key or not api_key.strip():
+            print("\n❌ Error: API key is required for GPT filtering.\n")
+            return
+
+        # API URL (required, no default)
+        api_url = questionary.text("🌐 Enter your OpenAI API URL (e.g. https://api.openai.com/v1):").ask()
+        if not api_url or not api_url.strip():
+            print("\n❌ Error: API URL is required for GPT filtering.\n")
+            return
+
     # Step 6: Perform search
     print("\n🔎 Searching datasets...")
     results = search_datasets(
@@ -51,7 +66,9 @@ def main():
         top_k=top_k,
         use_gpt_filter=use_gpt_filter,
         confidence_threshold=confidence_threshold,
-        return_all_gpt_results=return_all_gpt_results
+        return_all_gpt_results=return_all_gpt_results,
+        api_key=api_key,
+        api_url=api_url
     )
 
     # Step 7: Save results

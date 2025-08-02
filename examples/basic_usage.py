@@ -12,5 +12,3 @@ results_gpt_filtered.to_csv("examples/test.csv")
 
 # Microarray dataset search using convenience wrapper
 results_microarray_wrapper = search_microarray("Alzheimer's disease", top_k=40)
-
-
