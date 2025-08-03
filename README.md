@@ -1,6 +1,6 @@
 # 🧬 GeoVectorSearch
 
-**GeoDatasetFinder** is a lightweight Python SDK and command-line tool for discovering high-quality **GEO gene expression datasets** relevant to a disease or biological condition — optimized for **differential expression (DE) analysis**.
+**GeoVectorSearch** is a lightweight Python SDK and command-line tool for discovering high-quality **GEO gene expression datasets** relevant to a disease or biological condition — optimized for **differential expression (DE) analysis**.
 
 It combines **semantic search** using sentence embeddings with optional **GPT-based filtering** to help you rapidly identify suitable datasets for your research or pipeline.
 
