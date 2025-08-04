@@ -1,4 +1,15 @@
 """
+This module implements semantic query generation and evidence extraction strategies
+inspired by the following works:
+
+- Deka, P., Jurek-Loughrey, A., & others. (2022). "Evidence Extraction to Validate Medical Claims in Fake News Detection".
+  International Conference on Health Information Science, pp. 3–15.
+
+- Deka, P., & Jurek-Loughrey, A. (2021). "Unsupervised Keyword Combination Query Generation from Online Health Related Content for Evidence-Based Fact Checking".
+  The 23rd International Conference on Information Integration and Web Intelligence, pp. 267–277.
+"""
+
+"""
 GPT-based filtering module for genomic dataset curation.
 
 This module provides intelligent filtering of genomic datasets using OpenAI's GPT models

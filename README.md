@@ -104,7 +104,7 @@ gse-pysearch/
 
 ## 🛠️ Requirements
 
-* Python 3.8+
+* Python 3.12+
 * `faiss-cpu`, `pandas`, `sentence-transformers`
 
 ---
@@ -116,3 +116,13 @@ gse-pysearch/
 This project is licensed under the [GNU GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html), which guarantees end users the freedom to run, study, share, and modify the software.
 
 If you redistribute or modify this software, your contributions must also be licensed under the same terms.
+
+---
+
+## References
+
+This project implements semantic query generation and evidence extraction strategies inspired by:
+
+1. Deka, P., Jurek-Loughrey, A., & others. (2022). *Evidence Extraction to Validate Medical Claims in Fake News Detection*. International Conference on Health Information Science, pp. 3–15.
+
+2. Deka, P., & Jurek-Loughrey, A. (2021). *Unsupervised Keyword Combination Query Generation from Online Health Related Content for Evidence-Based Fact Checking*. The 23rd International Conference on Information Integration and Web Intelligence, pp. 267–277.

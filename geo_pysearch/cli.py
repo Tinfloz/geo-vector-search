@@ -140,7 +140,7 @@ def search_command():
             ).ask()
             
             if save_results:
-                filename = f"results_{dataset_type}_{query.replace(' ', '_').replace('/', '_')}.csv"
+                filename = f"results_{dataset_type}_{query.replace(' ', '_').replace('/', '_').replace("'",'')}.csv"
                 results.to_csv(filename, index=False)
                 print(f"\n✅ Results saved to: {filename}")
             
