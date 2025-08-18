@@ -10,7 +10,7 @@ It combines **semantic search** using sentence embeddings with optional **GPT-ba
 
 * ✅ **Natural language search** for GEO datasets
 * ⚡ **Fast vector search** using [FAISS](https://faiss.ai/) and prebuilt sentence embeddings
-* 🧠 **Optional GPT filtering** to assess dataset quality for DE analysis
+* 🧠 **Optional GPT filtering** to assess dataset quality for DE analysis - supports basic GPT filtering and enhanced GPT filtering which segregates the datasets into tiers: **Tier 1**: Highly suitable for DE studies, **Tier 2**: Suitable for DE studies but the samples come from cell lines/ organoids/ xenografts, and **Tier 3**: Not directly suitable for DE studies but can be used for exploratory studies
 * 🧬 Supports **microarray** and **RNA-seq** datasets
 * 🖥️ **Interactive CLI** for a smooth user experience
 * 🧩 Easy to integrate into larger pipelines or SDKs
@@ -44,6 +44,7 @@ from geo_pysearch.sdk import search_datasets
 results = search_datasets(
     query="duchenne muscular dystrophy",
     dataset_type="microarray",
+    gpt_filter_type="enhanced",
     top_k=50,
     use_gpt_filter=True,
     return_all_gpt_results=True
@@ -93,6 +94,7 @@ gse-pysearch/
 │   ├── vector_search/
 │   │   ├── vector_search.py
 │   │   ├── gpt_filter.py
+│   │   ├── tiered_gpt_filter.py
 │   ├── sdk.py               # Main SDK interface
 │   └── cli.py               # CLI implementation
 ├── examples/                # Example usage scripts
