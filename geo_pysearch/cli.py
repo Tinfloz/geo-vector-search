@@ -118,7 +118,7 @@ def search_command():
 
         # API credentials
         print("\n🔐 API Configuration:")
-        api_key = questionary.password("   Enter your OpenAI API key:").ask()
+        api_key = questionary.password("Enter your OpenAI API key:").ask()
         if not api_key or not api_key.strip():
             print("\n❌ Error: API key is required for GPT filtering.\n")
             return

@@ -207,6 +207,7 @@ You are a biomedical data curation specialist. Evaluate GEO datasets for their s
 - Technical replicates only (no biological replicates)
 - Only cell culture without disease relevance
 - Purely methodological studies (platform comparisons, etc.)
+- miRNA / non-coding RNA datasets (cannot directly score genes; gene-level DE analysis not possible; can be flagged for regulatory or biomarker studies)
 
 **Insufficient Context:**
 - Unclear sample composition from metadata
@@ -251,6 +252,7 @@ Tissue Type: [primary_human/cell_line/organoid/animal_model/unclear]
 Anatomical Relevance: [HIGH/MODERATE/LOW/IRRELEVANT]
 Study Design: [case_control/intervention/time_series/other]
 Reason: [2-3 sentences explaining classification with specific evidence]
+Is miRNA: [TRUE/FALSE]
 Key Limitations: [list main concerns or "none"]
 Confidence: [0.0-1.0]
 ```
@@ -401,6 +403,8 @@ Confidence: [0.0-1.0]
                 continue
             elif self._extract_field(line, "reason:", result, 'reason', str):
                 continue
+            elif self._extract_field(line, "is mirna", result, 'is_mirna', str):
+                continue
             elif self._extract_field(line, "key limitations:", result, 'key_limitations', str):
                 continue
             elif self._extract_field(line, "confidence:", result, 'confidence', float):
@@ -535,6 +539,7 @@ Confidence: [0.0-1.0]
                 'gpt_anatomical_relevance': gpt_result.anatomical_relevance,
                 'gpt_study_design': gpt_result.study_design,
                 'gpt_reason': gpt_result.reason,
+                'gpt_is_mirna': gpt_result.is_mirna,
                 'gpt_key_limitations': gpt_result.key_limitations,
                 'gpt_confidence': gpt_result.confidence,
                 'gpt_raw_response': gpt_result.raw_response,
@@ -553,6 +558,7 @@ Confidence: [0.0-1.0]
                 'gpt_anatomical_relevance': 'Error',
                 'gpt_study_design': 'Error',
                 'gpt_reason': f"Processing failed: {str(e)[:100]}...",
+                'gpt_is_mirna': 'Error',
                 'gpt_key_limitations': f"Processing error: {str(e)[:50]}...",
                 'gpt_confidence': 0.0,
                 'gpt_raw_response': '',
@@ -588,6 +594,7 @@ Confidence: [0.0-1.0]
             - gpt_anatomical_relevance: Anatomical relevance level
             - gpt_study_design: Study design type
             - gpt_reason: Detailed explanation
+            - gpt_is_mirna: If the dataset is an miRNA dataset or not
             - gpt_key_limitations: Key limitations identified
             - gpt_confidence: Confidence score (0.0-1.0)
             - gpt_raw_response: Full GPT response
