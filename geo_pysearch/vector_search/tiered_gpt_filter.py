@@ -42,6 +42,8 @@ GPTModel = Literal['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo']
 @dataclass
 class EnhancedGPTResponse:
     """Structured response from enhanced GPT API."""
+    primary_method: str = ""
+    exclusion_check: str = ""
     tier: Optional[int] = None
     disease_samples: Optional[str] = None
     control_samples: Optional[str] = None
@@ -150,157 +152,209 @@ class EnhancedGPTFilter:
         Returns:
             Enhanced formatted prompt string
         """
-        return f"""# Enhanced Biomedical Data Curation Assistant
+        return f"""# Biomedical Data Curation Assistant - STRICT CLASSIFICATION
 
-## Core Task
-You are a biomedical data curation specialist. Evaluate GEO datasets for their suitability in **Differential Expression (DE) analysis** comparing **{disease}** samples against appropriate controls.
+## CRITICAL INSTRUCTIONS - READ CAREFULLY
+You are evaluating datasets for BULK transcriptomic Differential Expression (DE) analysis comparing {disease} samples against controls. This requires BULK tissue/cell samples for either RNA-seq OR microarray analysis, NOT single-cell data.
 
 ## Dataset Information
 - **GSE ID**: {record.get('gse', 'N/A')}
 - **Summary**: {record.get('cleaned_text', 'N/A')}
 - **Target Disease**: {disease}
 
-## Evaluation Framework
+## CONTEXTUAL ANALYSIS FRAMEWORK
 
-### TIER 1: Directly Suitable (High Confidence)
+**The key question is: What did the researchers ACTUALLY DO in their experiment?**
+
+### STEP 1: IDENTIFY PRIMARY EXPERIMENTAL METHOD
+
+**Use these analytical principles:**
+
+1. **Look for ACTIVE experimental descriptions:**
+   - What verbs describe the main methodology?
+   - What was the primary sample processing approach?
+   - What platform/technology was the core method?
+
+2. **Distinguish between PRIMARY vs SECONDARY mentions:**
+   - **PRIMARY**: The main experimental approach described
+   - **SECONDARY**: Background, comparisons, related work, or additional context
+
+3. **Focus on SAMPLE PROCESSING and ANALYSIS:**
+   - How were the biological samples processed?
+   - What was sequenced/analyzed at what resolution?
+   - Individual cells/nuclei OR bulk tissue/cell populations?
+
+4. **Identify the RESEARCH QUESTION and DESIGN:**
+   - Is the study designed around single-cell resolution?
+   - Or is it designed for population-level (bulk) analysis?
+
+### EXCLUSION DECISION FRAMEWORK
+
+**EXCLUDE (Tier 3) if PRIMARY method is:**
+- Single-cell or single-nucleus RNA sequencing
+- Spatial transcriptomics
+- Non-coding RNA focused (miRNA/lncRNA only)
+- Proteomics/metabolomics
+- Technical platform comparisons
+- Sequencing methods other than bulk RNA-seq (e.g., ChIP-seq, ATAC-seq, methylation)
+
+**Key reasoning approach:**
+- Ask: "If I had to reproduce this study, what would be my main experimental protocol?"
+- The answer to that question determines the primary method
+
+**CONTINUE ANALYSIS if:**
+- Primary method is bulk tissue/cell population RNA sequencing OR microarray analysis
+- Even if single-cell technologies are mentioned for context/comparison
+
+## BULK RNA-SEQ CLASSIFICATION FRAMEWORK
+
+### TIER 1: Optimal for Bulk DE Analysis
 **ALL criteria must be met:**
 
-**Sample Composition (REQUIRED):**
-- Contains disease samples AND matched controls (healthy/normal)
-- Minimum 3 samples per group (prefer ≥5)
-- Clear case-control design for comparative analysis
+**Sample Requirements (MANDATORY):**
+- BULK tissue or cell population samples (not single cells)
+- Disease samples AND appropriate controls present (healthy/normal)
+- Minimum 3 biological replicates per group (prefer ≥5)
+- Clear case-control design
 
-**Tissue Relevance (REQUIRED):**
-- Uses primary human tissue directly relevant to disease pathophysiology
-- Appropriate anatomical site (e.g., brain for neurological diseases)
-- Fresh/frozen tissue preferred over FFPE when possible
+**Biological Relevance (MANDATORY):**
+- Primary human tissue directly relevant to {disease} pathophysiology
+- Anatomically appropriate tissue type
+- Disease-relevant context
 
-**Study Design (REQUIRED):**
-- Designed for disease comparison (not primarily drug response/intervention)
-- Appropriate controls (not just different disease states)
-- Sufficient metadata for proper analysis
+**Study Design (MANDATORY):**
+- Designed for disease comparison (not intervention/treatment primary focus)
+- Controls are healthy/normal (not just different disease states)
+- Adequate metadata for proper DE analysis
 
-**Note:** Datasets with only miRNA or non-coding RNA **cannot be Tier 1**, regardless of sample size, tissue relevance, or study design.
+**Technology Requirements:**
+- Bulk RNA-seq with standard library preparation OR
+- Microarray with appropriate probe coverage and normalization
 
-### TIER 2: Conditionally Suitable (Moderate Utility)
-**Must meet basic comparison criteria PLUS one or more limitations:**
+### TIER 2: Suitable with Limitations
+**Must have bulk samples AND disease vs control comparison, PLUS:**
 
-**Acceptable with Limitations:**
-- Disease-relevant cell lines or established organoid models
-- Smaller sample sizes (2-4 per group) but adequate for exploratory analysis
-- Mixed sample types but includes relevant tissue
-- Induced disease models (iPSC-derived, xenografts) in appropriate context
-- Subset analysis possible from larger study
-- Well-characterized animal models standard for this disease field
+**Acceptable Limitations:**
+- Disease-relevant cell lines or well-characterized models
+- Smaller sample sizes (2-4 per group) but biologically meaningful
+- Mixed sample types but includes relevant material
+- Intervention studies with baseline disease vs control comparisons
+- Animal models standard for the disease field
 
-**Study Design Considerations:**
-- Primary focus on intervention but includes baseline comparisons
-- Time-series with appropriate control timepoints
-- Multi-condition studies where disease vs control can be extracted
-
-**Note:** Datasets with only miRNA or non-coding RNA **cannot be Tier 2**, regardless of sample size, tissue relevance, or study design.
-
-### TIER 3: Not Suitable (Exclude)
-**Any of these conditions automatically disqualifies:**
-
-**Fatal Flaws:**
-- No control samples or inappropriate controls only
-- Single condition studies (no comparative element)
-- Wrong tissue/organ system for disease biology
-- Only treatment response without baseline disease comparison
+### TIER 3: Not Suitable
+**Any of these automatically disqualifies:**
+- Single-cell or single-nucleus data
+- No control samples or inappropriate controls
+- Wrong tissue/system for disease biology
+- Only treatment response without baseline comparison
 - Technical replicates only (no biological replicates)
-- Only cell culture without disease relevance
-- Purely methodological studies (platform comparisons, etc.)
-- miRNA / non-coding RNA datasets (cannot directly score genes; gene-level DE analysis not possible; can be flagged for regulatory or biomarker studies)
+- Non-coding RNA focus (eg: miRNA/lncRNA only studies)
+- Spatial transcriptomics
+- Methodological/technical studies
+- Non-transcriptomic methods (proteomics, metabolomics, epigenomics)
 
-**Insufficient Context:**
-- Unclear sample composition from metadata
-- No disease-control distinction possible
-- Unrelated biological context
+## CLASSIFICATION PROCESS
 
-## Decision Process
+### STEP 1: PRIMARY METHOD IDENTIFICATION
+**Read the entire summary and ask:**
+1. "What is the main experimental approach described?"
+2. "How were samples processed for analysis?"
+3. "What technology/platform was used as the core method?"
+4. "What resolution does the analysis operate at - cellular or tissue/population level?"
 
-### Step 0: miRNA / non-coding RNA check
-- If the dataset primarily measures miRNA or non-coding RNA, set:
-  Tier = 3
-  Is miRNA = TRUE
-  Reason = "Dataset contains primarily miRNA/non-coding RNA; gene-level DE analysis not possible."
-  Confidence < 1.0
-- If miRNA = FALSE, proceed to Step 1.
+**Decision logic:**
+- If the core experimental design is single-cell/nucleus → EXCLUDE
+- If the core experimental design is bulk tissue/population transcriptomics → CONTINUE
+- If unclear or mixed methods → Default to EXCLUDE (Tier 3)
 
-### Step 1: Sample Composition Analysis
-Identify if dataset contains:
-- Disease samples: YES/NO
-- Control samples: YES/NO  
-- Sample sizes: Disease=X, Control=Y
+### STEP 2: BULK TRANSCRIPTOMIC CONFIRMATION  
+**For studies that pass Step 1, confirm bulk transcriptomic characteristics:**
+- Population-level gene expression analysis
+- Tissue or cell population samples (not individual cells)
+- Standard RNA-seq library preparation OR microarray hybridization workflows
+- Focus on aggregate/average expression across sample groups
 
-### Step 2: Tissue/Model Relevance Assessment
-- Primary human tissue: YES/NO
-- Disease-relevant tissue: YES/NO
-- Model system type: [primary/cell_line/organoid/animal/other]
+### STEP 3: DISEASE-CONTROL ASSESSMENT
+**Check for:**
+- Disease samples present: YES/NO
+- Control samples present: YES/NO
+- Sample sizes adequate: YES/NO
 
-### Step 3: Study Design Evaluation
+### STEP 4: BIOLOGICAL RELEVANCE
+**Evaluate:**
+- Tissue type appropriate for {disease}: YES/NO
+- Primary human samples preferred: YES/NO
+- Disease context relevant: YES/NO
+
+### STEP 5: STUDY DESIGN
+**Assess:**
 - Designed for disease comparison: YES/NO
-- Appropriate for DE analysis: YES/NO
-- Major confounding factors: [list or none]
+- Appropriate controls: YES/NO
+- Suitable for DE analysis: YES/NO
 
-### Step 4: Quality Indicators
-Count positive factors:
-- Adequate sample size (≥5 per group): +1
-- Primary human tissue: +2  
-- Disease-relevant anatomical site: +2
-- Clear case-control design: +2
-- Good metadata quality: +1
-
-## Output Requirements
-
-**MANDATORY FORMAT - Do not deviate:**
+## MANDATORY OUTPUT FORMAT
 
 ```
+Primary Method: [bulk_rnaseq/microarray/single_cell/spatial/non_coding_rna/proteomics/unclear]
+Exclusion Check: [PASS/FAIL] - [detailed reason if failed]
 Tier: [1/2/3]
 Disease Samples: [YES/NO] (count if available)
-Control Samples: [YES/NO] (count if available)  
-Tissue Type: [primary_human/cell_line/organoid/animal_model/unclear]
+Control Samples: [YES/NO] (count if available)
+Tissue Type: [primary_human/cell_line/animal_model/other]
 Anatomical Relevance: [HIGH/MODERATE/LOW/IRRELEVANT]
 Study Design: [case_control/intervention/time_series/other]
-Reason: [2-3 sentences explaining classification with specific evidence]
-Is miRNA: [TRUE/FALSE]
-Key Limitations: [list main concerns or "none"]
+Reason: [Clear explanation with specific evidence from summary]
+Key Limitations: [Specific limitations or "none"]
 Confidence: [0.0-1.0]
 ```
 
-## Quality Control Checks
+## QUALITY ASSURANCE RULES
 
-**Before finalizing, verify:**
-1. Classification aligns with tier definitions
-2. Evidence supports reasoning
-3. All required output fields completed
-4. Confidence score reflects certainty level
-5. Key limitations identified if present
+1. **If summary mentions single-cell/single-nucleus → Tier 3 ALWAYS**
+2. **If unclear whether bulk or single-cell → Default Tier 3**
+3. **If no clear controls mentioned → Tier 3**
+4. **If wrong tissue type for disease → Tier 3**
+5. **If studying a DIFFERENT disease than target → Tier 3 ALWAYS**
+    - Even if diseases are related or share symptoms
+    - Even if mentioned as secondary/related condition
+    - Primary disease focus must match target disease exactly
+6. **When in doubt → Choose lower tier**
 
-## Edge Case Handling
+## CONFIDENCE SCORING
+- **0.9-1.0**: Crystal clear classification with strong evidence
+- **0.7-0.8**: Good confidence, minor ambiguities
+- **0.5-0.6**: Moderate confidence, some uncertainty
+- **0.3-0.4**: Low confidence, significant ambiguity
+- **0.0-0.2**: Very uncertain, insufficient information
 
-**If metadata is unclear or insufficient:**
-- Default to Tier 3 with confidence <0.6
-- Note "insufficient metadata" in limitations
-- Specify what information is missing
+## REASONING EXAMPLES (Principles, not exhaustive rules)
 
-**If multiple interpretations possible:**
-- Choose more conservative tier
-- Lower confidence score accordingly
-- Explain uncertainty in reasoning
+**Example reasoning for PRIMARY method identification:**
 
-**Cross-disease relevance:**
-- Focus on specified disease context
-- Consider tissue-disease biology relationship
-- Account for disease heterogeneity when relevant
+**Case A: Single-cell primary**
+Summary: "We performed single-nucleus RNA sequencing of brain tissue from PD patients..."
+Analysis: Core verb is "performed single-nucleus RNA sequencing" - this is the main experimental method
+Decision: EXCLUDE - Primary method is single-nucleus
 
-## Confidence Scoring Guide
-- **0.9-1.0**: Clear, unambiguous classification with strong evidence
-- **0.7-0.8**: Good confidence with minor uncertainties
-- **0.5-0.6**: Moderate confidence, some ambiguity in metadata
-- **0.3-0.4**: Low confidence, significant uncertainty
-- **0.0-0.2**: Very uncertain, insufficient information"""
+**Case B: Bulk primary with single-cell context**  
+Summary: "Previous single-cell studies suggested heterogeneity. We used bulk tissue RNA-seq to measure average expression changes..."
+Analysis: Core method is "bulk tissue RNA-seq" - single-cell is background context
+Decision: CONTINUE - Primary method is bulk RNA-seq
+
+**Case C: Unclear methodology**
+Summary: "We analyzed gene expression in disease samples using genomic approaches..."
+Analysis: No clear indication of single-cell vs bulk methodology
+Decision: EXCLUDE (default when unclear)
+
+**Case D: Wrong disease focus**
+Summary: "We performed bulk RNA-seq of cerebellar tissue from Multiple System Atrophy patients and controls..."
+Target Disease: Parkinson's disease
+Analysis: Core method is bulk RNA-seq, but primary disease is MSA, not Parkinson's
+Decision: EXCLUDE - Wrong disease focus (MSA ≠ Parkinson's)
+
+The key is asking: "What would someone need to do to replicate this study's main findings?"
+
+Remember: Be STRICT. When uncertain, default to Tier 3. The goal is to identify only clearly suitable bulk RNA-seq datasets for robust differential expression analysis."""
     
     def _rate_limit_check(self) -> None:
         """
@@ -401,6 +455,10 @@ Confidence: [0.0-1.0]
                 continue
                 
             # Parse each field with more robust regex
+            if self._extract_field(line, "primary method:", result, 'primary_method', str):
+                continue
+            if self._extract_field(line, "exclusion check:", result, 'exclusion_check', str):
+                continue
             if self._extract_field(line, "tier:", result, 'tier', int):
                 continue
             elif self._extract_field(line, "disease samples:", result, 'disease_samples', str):
@@ -414,8 +472,6 @@ Confidence: [0.0-1.0]
             elif self._extract_field(line, "study design:", result, 'study_design', str):
                 continue
             elif self._extract_field(line, "reason:", result, 'reason', str):
-                continue
-            elif self._extract_field(line, "is mirna", result, 'is_mirna', str):
                 continue
             elif self._extract_field(line, "key limitations:", result, 'key_limitations', str):
                 continue
@@ -513,6 +569,10 @@ Confidence: [0.0-1.0]
             logger.warning(f"Invalid tier {result.tier}, defaulting to 3")
             result.tier = 3
             result.confidence = max(0.0, result.confidence - 0.2)
+        if not result.primary_method:
+            result.primary_method = "unclear"
+        if not result.exclusion_check:
+            result.exclusion_check = "unclear"
         
         # Ensure confidence is in valid range
         result.confidence = max(0.0, min(1.0, result.confidence))
@@ -540,10 +600,11 @@ Confidence: [0.0-1.0]
         try:
             prompt = self._build_enhanced_prompt(record, disease)
             gpt_result = self._call_gpt(prompt)
-            
             # Create enhanced result record
             final_record = record.copy()
             final_record.update({
+                'gpt_primary_method': gpt_result.primary_method,
+                'gpt_exclusion_check': gpt_result.exclusion_check,
                 'gpt_tier': gpt_result.tier,
                 'gpt_disease_samples': gpt_result.disease_samples,
                 'gpt_control_samples': gpt_result.control_samples,
@@ -551,7 +612,6 @@ Confidence: [0.0-1.0]
                 'gpt_anatomical_relevance': gpt_result.anatomical_relevance,
                 'gpt_study_design': gpt_result.study_design,
                 'gpt_reason': gpt_result.reason,
-                'gpt_is_mirna': gpt_result.is_mirna,
                 'gpt_key_limitations': gpt_result.key_limitations,
                 'gpt_confidence': gpt_result.confidence,
                 'gpt_raw_response': gpt_result.raw_response,
@@ -563,6 +623,8 @@ Confidence: [0.0-1.0]
             # Create error record
             final_record = record.copy()
             final_record.update({
+                'gpt_primary_method':'Error',
+                'gpt_exclusion_check': 'Error',
                 'gpt_tier': 3,
                 'gpt_disease_samples': 'Error',
                 'gpt_control_samples': 'Error',
